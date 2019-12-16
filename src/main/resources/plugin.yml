@@ -1,12 +1,12 @@
-name: TogglePickups
-version: 1.0
-main: me.joshuaemq.TogglePickupsPlugin
-author: joshuaemq
-description: Allows you to toggle pickups!
+name: EconomyRepair
+version: 1.0.0
+main: land.face.repair.EconRepairPlugin
+author: Faceguy
+description: Allows item fixing based on level and maybe eventually rarity
+api-version: 1.14
 
 commands:
-     toggledrops:
-         usage: /<command>
-         aliases: [td]
-         permission: toggledrops.use
-         description: Toggle Drops
+  repair:
+    usage: /<command>
+    aliases: [econrepair]
+    description: Opens a repair GUI
