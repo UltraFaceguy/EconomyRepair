@@ -14,10 +14,10 @@ public class ItemUtil {
   }
 
   public static boolean canBeRepaired(ItemStack stack) {
-    if (stack.getType().getMaxDurability() < 10) {
+    if (stack.getType().getMaxDurability() < 5) {
       return false;
     }
-    return stack.getDurability() > 9;
+    return stack.getDurability() > 0;
   }
 
   public static int getItemLevel(ItemStack stack) {

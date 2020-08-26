@@ -1,28 +1,37 @@
 package land.face.repair.managers;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
+import land.face.repair.EconRepairPlugin;
 import land.face.repair.menus.FilterGuiMenu;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
 public class RepairGuiManager {
 
-  private List<FilterGuiMenu> openMenus;
+  private final Map<Player, FilterGuiMenu> openMenus = new WeakHashMap<>();
 
-  public RepairGuiManager() {
-    this.openMenus = new ArrayList<>();
+  private final double baseCost;
+  private final double costPerLevel;
+  private final double costExponent;
+
+  public RepairGuiManager(EconRepairPlugin plugin) {
+    baseCost = plugin.getSettings().getDouble("config.base-repair-cost", 5);
+    costPerLevel = plugin.getSettings().getDouble("config.repair-cost-per-level", 1);
+    costExponent = plugin.getSettings().getDouble("config.repair-cost-exponent", 1.5);
   }
 
-  public List<FilterGuiMenu> getOpenMenus() {
-    return openMenus;
+  public Set<FilterGuiMenu> getOpenMenus() {
+    return new HashSet<>(openMenus.values());
   }
 
   public FilterGuiMenu getFilterMenu(Inventory inventory) {
     if (inventory == null) {
       return null;
     }
-    for (FilterGuiMenu filterGuiMenu : openMenus) {
+    for (FilterGuiMenu filterGuiMenu : openMenus.values()) {
       if (filterGuiMenu.getInventory().equals(inventory)) {
         return filterGuiMenu;
       }
@@ -31,25 +40,36 @@ public class RepairGuiManager {
   }
 
   public void open(Player player) {
-    FilterGuiMenu menu = new FilterGuiMenu(player);
-    openMenus.add(menu);
+    FilterGuiMenu menu = new FilterGuiMenu(this, player);
+    openMenus.put(player, menu);
   }
 
   public void close(Inventory inventory) {
-    if (inventory == null || !(inventory.getHolder() instanceof Player)) {
+    if (inventory == null) {
       return;
     }
     FilterGuiMenu menu = getFilterMenu(inventory);
     if (menu != null) {
-      ((Player) inventory.getHolder()).closeInventory();
-      openMenus.remove(menu);
+      openMenus.remove(menu.getOwner());
     }
   }
 
   public void closeAllMenus() {
-    for (FilterGuiMenu menu : openMenus) {
+    for (FilterGuiMenu menu : openMenus.values()) {
       close(menu.getInventory());
     }
     openMenus.clear();
+  }
+
+  public double getBaseCost() {
+    return baseCost;
+  }
+
+  public double getCostPerLevel() {
+    return costPerLevel;
+  }
+
+  public double getCostExponent() {
+    return costExponent;
   }
 }

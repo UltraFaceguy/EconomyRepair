@@ -32,7 +32,7 @@ public class EconRepairPlugin extends JavaPlugin {
 
   public void onEnable() {
     instance = this;
-    repairGuiManager = new RepairGuiManager();
+    repairGuiManager = new RepairGuiManager(this);
 
     List<VersionedSmartYamlConfiguration> configurations = new ArrayList<>();
     configurations.add(configYAML = defaultSettingsLoad("config.yml"));

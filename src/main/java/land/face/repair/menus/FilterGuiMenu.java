@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import land.face.repair.EconRepairPlugin;
 import land.face.repair.data.RepairIcon;
+import land.face.repair.managers.RepairGuiManager;
 import land.face.repair.utils.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -18,23 +19,18 @@ import org.bukkit.inventory.ItemStack;
 
 public class FilterGuiMenu {
 
-  private Inventory inventory;
-  private List<RepairIcon> repairIcons = new ArrayList<>();
+  private final RepairGuiManager repairGuiManager;
+  private final Player owner;
 
-  private double baseCost;
-  private double costPerLevel;
-  private double costExponent;
+  private final List<RepairIcon> repairIcons = new ArrayList<>();
+  private Inventory inventory;
 
   public static final DecimalFormat FORMAT = new DecimalFormat("###,###,###");
   private final static String MENU_NAME = ChatColor.DARK_GRAY + "Click To Repair!";
 
-  public FilterGuiMenu(Player owner) {
-    baseCost = EconRepairPlugin.getInstance().getSettings()
-        .getDouble("config.base-repair-cost", 5);
-    costPerLevel = EconRepairPlugin.getInstance().getSettings()
-        .getDouble("config.repair-cost-per-level", 1);
-    costExponent = EconRepairPlugin.getInstance().getSettings()
-        .getDouble("config.repair-cost-exponent", 1.5);
+  public FilterGuiMenu(RepairGuiManager repairGuiManager, Player owner) {
+    this.repairGuiManager = repairGuiManager;
+    this.owner = owner;
     buildInventory(owner);
     openInventory(owner);
   }
@@ -69,19 +65,23 @@ public class FilterGuiMenu {
     player.openInventory(inventory);
   }
 
-  public Inventory getInventory() {
-    return inventory;
-  }
-
   private RepairIcon buildRepairIcon(ItemStack stack) {
     double itemLevel = ItemUtil.getItemLevel(stack);
-    int cost = (int) ((baseCost + itemLevel * costPerLevel +
-        Math.pow(itemLevel, costExponent)) * ItemUtil.getPercent(stack));
+    int cost = (int) ((repairGuiManager.getBaseCost() + itemLevel * repairGuiManager.getCostPerLevel() +
+        Math.pow(itemLevel, repairGuiManager.getCostExponent())) * ItemUtil.getPercent(stack));
     ItemStack displayStack = stack.clone();
     List<String> lore = new ArrayList<>(ItemStackExtensionsKt.getLore(displayStack));
     lore.add("");
     lore.add(TextUtils.color("&6&lRepair Cost: &f&l" + FORMAT.format(cost) + " Bits"));
     ItemStackExtensionsKt.setLore(displayStack, lore);
     return new RepairIcon(displayStack, stack, cost);
+  }
+
+  public Inventory getInventory() {
+    return inventory;
+  }
+
+  public Player getOwner() {
+    return owner;
   }
 }
