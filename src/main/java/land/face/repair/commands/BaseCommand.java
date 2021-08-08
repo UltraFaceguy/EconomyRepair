@@ -26,7 +26,7 @@ public class BaseCommand {
 
   @Command(identifier = "repair menu", permissions = "econrepair.menu", onlyPlayers = false)
   public void menuCommand(CommandSender sender, @Arg(name = "target") Player target) {
-    plugin.getRepairGuiManager().open(target);
+    plugin.getRepairGuiManager().open(target, null);
     sendMessage(sender, plugin.getSettings().getString("config.language.command.force-menu",
         "&aopened menu for {n}").replace("{n}", target.getDisplayName()));
   }

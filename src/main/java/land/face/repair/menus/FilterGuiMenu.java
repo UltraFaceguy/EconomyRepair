@@ -1,16 +1,20 @@
 package land.face.repair.menus;
 
-import com.tealcube.minecraft.bukkit.TextUtils;
+import io.pixeloutlaw.minecraft.spigot.garbage.StringExtensionsKt;
 import io.pixeloutlaw.minecraft.spigot.hilt.ItemStackExtensionsKt;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import land.face.repair.EconRepairPlugin;
+import java.util.Map;
 import land.face.repair.data.RepairIcon;
+import land.face.repair.events.RepairCostGenerationEvent;
 import land.face.repair.managers.RepairGuiManager;
+import land.face.repair.tasks.ItemDisplayTask;
 import land.face.repair.utils.ItemUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -19,8 +23,11 @@ import org.bukkit.inventory.ItemStack;
 
 public class FilterGuiMenu {
 
+  private static final Map<String, ItemDisplayTask> itemDisplays = new HashMap<>();
+
   private final RepairGuiManager repairGuiManager;
   private final Player owner;
+  private final Location anvilLocation;
 
   private final List<RepairIcon> repairIcons = new ArrayList<>();
   private Inventory inventory;
@@ -28,9 +35,13 @@ public class FilterGuiMenu {
   public static final DecimalFormat FORMAT = new DecimalFormat("###,###,###");
   private final static String MENU_NAME = ChatColor.DARK_GRAY + "Click To Repair!";
 
-  public FilterGuiMenu(RepairGuiManager repairGuiManager, Player owner) {
+  public FilterGuiMenu(RepairGuiManager repairGuiManager, Player owner, Location anvilLocation) {
     this.repairGuiManager = repairGuiManager;
     this.owner = owner;
+    this.anvilLocation = anvilLocation;
+    if (anvilLocation != null && !itemDisplays.containsKey(anvilLocation.toString())) {
+      itemDisplays.put(anvilLocation.toString(), null);
+    }
     buildInventory(owner);
     openInventory(owner);
   }
@@ -49,7 +60,7 @@ public class FilterGuiMenu {
         continue;
       }
       if (ItemUtil.canBeRepaired(stack)) {
-        repairIcons.add(buildRepairIcon(stack));
+        repairIcons.add(buildRepairIcon(owner, stack));
       }
     }
     int size = 9 * (int) Math.ceil((double) repairIcons.size() / 9);
@@ -65,16 +76,33 @@ public class FilterGuiMenu {
     player.openInventory(inventory);
   }
 
-  private RepairIcon buildRepairIcon(ItemStack stack) {
+  private RepairIcon buildRepairIcon(Player player, ItemStack stack) {
     double itemLevel = ItemUtil.getItemLevel(stack);
-    int cost = (int) ((repairGuiManager.getBaseCost() + itemLevel * repairGuiManager.getCostPerLevel() +
+    double cost = ((repairGuiManager.getBaseCost() + itemLevel * repairGuiManager.getCostPerLevel() +
         Math.pow(itemLevel, repairGuiManager.getCostExponent())) * ItemUtil.getPercent(stack));
+
+    double repairMult = 1;
+    for (String loreLine : ItemStackExtensionsKt.getLore(stack)) {
+      if (!loreLine.contains(" Repair Cost")) {
+        continue;
+      }
+      String strippedLore = ChatColor.stripColor(loreLine);
+      double value = Double.parseDouble(strippedLore.replaceAll("[^0-9.-]", ""));
+      repairMult += value / 100;
+    }
+    cost *= Math.min(0, repairMult);
+
+    RepairCostGenerationEvent costEvent = new RepairCostGenerationEvent(player, stack, cost);
+    Bukkit.getPluginManager().callEvent(costEvent);
+
+    cost = costEvent.getCost();
+
     ItemStack displayStack = stack.clone();
     List<String> lore = new ArrayList<>(ItemStackExtensionsKt.getLore(displayStack));
     lore.add("");
-    lore.add(TextUtils.color("&6&lRepair Cost: &f&l" + FORMAT.format(cost) + " Bits"));
+    lore.add(StringExtensionsKt.chatColorize("&6&lRepair Cost: &e" + FORMAT.format(cost) + "◎"));
     ItemStackExtensionsKt.setLore(displayStack, lore);
-    return new RepairIcon(displayStack, stack, cost);
+    return new RepairIcon(displayStack, stack, (int) cost);
   }
 
   public Inventory getInventory() {
@@ -84,4 +112,20 @@ public class FilterGuiMenu {
   public Player getOwner() {
     return owner;
   }
+
+  public void displayItem(ItemStack stack) {
+    if (anvilLocation == null) {
+      return;
+    }
+    if (!itemDisplays.containsKey(anvilLocation.toString())) {
+      return;
+    }
+    ItemDisplayTask task = itemDisplays.get(anvilLocation.toString());
+    if (task == null || task.isCancelled()) {
+      task = new ItemDisplayTask(anvilLocation.clone().add(0.5, 1.9, 0.5));
+      itemDisplays.put(anvilLocation.toString(), task);
+    }
+    task.displayItem(stack);
+  }
+
 }

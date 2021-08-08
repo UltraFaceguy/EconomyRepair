@@ -4,6 +4,8 @@ main: land.face.repair.EconRepairPlugin
 author: Faceguy
 description: Allows item fixing based on level and maybe eventually rarity
 api-version: 1.16
+softdepend: [HolographicDisplays]
+depend: [Facecore]
 
 commands:
   repair:

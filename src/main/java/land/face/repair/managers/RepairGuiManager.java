@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import land.face.repair.EconRepairPlugin;
 import land.face.repair.menus.FilterGuiMenu;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 
@@ -39,8 +40,8 @@ public class RepairGuiManager {
     return null;
   }
 
-  public void open(Player player) {
-    FilterGuiMenu menu = new FilterGuiMenu(this, player);
+  public void open(Player player, Location anvilLocation) {
+    FilterGuiMenu menu = new FilterGuiMenu(this, player, anvilLocation);
     openMenus.put(player, menu);
   }
 

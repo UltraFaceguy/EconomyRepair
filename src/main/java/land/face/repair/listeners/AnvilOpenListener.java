@@ -22,7 +22,7 @@ public class AnvilOpenListener implements Listener {
     }
     if (e.getInventory() instanceof AnvilInventory) {
       e.setCancelled(true);
-      plugin.getRepairGuiManager().open((Player) e.getPlayer());
+      plugin.getRepairGuiManager().open((Player) e.getPlayer(), e.getInventory().getLocation());
     }
   }
 }

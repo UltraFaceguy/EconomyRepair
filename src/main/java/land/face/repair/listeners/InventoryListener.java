@@ -2,30 +2,30 @@ package land.face.repair.listeners;
 
 import com.tealcube.minecraft.bukkit.TextUtils;
 import com.tealcube.minecraft.bukkit.facecore.utilities.MessageUtils;
-import info.faceland.mint.MintEconomy;
 import io.pixeloutlaw.minecraft.spigot.hilt.ItemStackExtensionsKt;
 import java.util.ArrayList;
 import java.util.List;
 import land.face.repair.EconRepairPlugin;
 import land.face.repair.data.RepairIcon;
 import land.face.repair.menus.FilterGuiMenu;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.nunnerycode.mint.MintPlugin;
 
 public class InventoryListener implements Listener {
 
-  private EconRepairPlugin plugin;
-  private String tooPoorMessage;
-  private String repairMessage;
-  private String remainingMessage;
-  private String bankRemainingMessage;
-  private String alreadyRepaired;
+  private final EconRepairPlugin plugin;
+  private final String tooPoorMessage;
+  private final String repairMessage;
+  private final String remainingMessage;
+  private final String bankRemainingMessage;
+  private final String alreadyRepaired;
 
   public InventoryListener(EconRepairPlugin plugin) {
     this.plugin = plugin;
@@ -75,20 +75,21 @@ public class InventoryListener implements Listener {
       return;
     }
 
-    String uuid = e.getWhoClicked().getUniqueId().toString();
-    MintEconomy economy = MintPlugin.getInstance().getEconomy();
-    double balance = economy.getBalance(uuid);
+    Player player = (Player) e.getWhoClicked();
+    String uuidString = player.getUniqueId().toString();
+    Economy economy = plugin.getEconomy();
+    double balance = economy.getBalance(player);
 
     boolean bankSub = false;
     if (balance >= repairIcon.getRepairCost()) {
-      economy.withdrawPlayer(uuid, repairIcon.getRepairCost());
-    } else if (economy.bankHas(uuid, repairIcon.getRepairCost() - balance).transactionSuccess()) {
+      economy.withdrawPlayer((Player) e.getWhoClicked(), repairIcon.getRepairCost());
+    } else if (economy.bankHas(player.getUniqueId().toString(), repairIcon.getRepairCost() - balance).transactionSuccess()) {
       bankSub = true;
-      if (balance > 0) {
-        economy.setBalance(uuid, 0);
-        economy.bankWithdraw(uuid, repairIcon.getRepairCost() - balance);
+      if (balance < repairIcon.getRepairCost()) {
+        economy.withdrawPlayer(player, balance);
+        economy.bankWithdraw(uuidString, repairIcon.getRepairCost() - balance);
       } else {
-        economy.bankWithdraw(uuid, repairIcon.getRepairCost());
+        economy.bankWithdraw(uuidString, repairIcon.getRepairCost());
       }
     } else {
       MessageUtils.sendMessage(e.getWhoClicked(), tooPoorMessage);
@@ -99,15 +100,16 @@ public class InventoryListener implements Listener {
     MessageUtils.sendMessage(e.getWhoClicked(), repairMessage.replace("{a}",
         FilterGuiMenu.FORMAT.format(repairIcon.getRepairCost())));
     MessageUtils.sendMessage(e.getWhoClicked(), remainingMessage.replace("{a}",
-        FilterGuiMenu.FORMAT.format(economy.getBalance(uuid))));
+        FilterGuiMenu.FORMAT.format(economy.getBalance(player))));
     if (bankSub) {
       MessageUtils.sendMessage(e.getWhoClicked(), bankRemainingMessage.replace("{a}",
-          FilterGuiMenu.FORMAT.format(economy.bankBalance(uuid).balance)));
+          FilterGuiMenu.FORMAT.format(economy.bankBalance(uuidString).balance)));
     }
     e.getWhoClicked().getLocation().getWorld()
         .playSound(e.getWhoClicked().getLocation(), Sound.BLOCK_ANVIL_USE, 1f, 1f);
     repairIcon.getTargetStack().setDurability((short) 0);
     setPurchased(menu, e.getSlot(), repairIcon);
+    menu.displayItem(repairIcon.getTargetStack());
   }
 
   @EventHandler
