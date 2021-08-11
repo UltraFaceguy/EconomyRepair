@@ -24,7 +24,7 @@ public class ItemUtil {
     if (stack.getItemMeta() == null) {
       return 1;
     }
-    List<String> lore = ItemStackExtensionsKt.getLore(stack);
+    List<String> lore = stack.getLore();
     if (lore.isEmpty()) {
       return 1;
     }

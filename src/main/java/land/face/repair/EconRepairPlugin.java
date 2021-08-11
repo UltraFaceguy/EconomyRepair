@@ -1,12 +1,13 @@
 package land.face.repair;
 
+import com.tealcube.minecraft.bukkit.shade.acf.PaperCommandManager;
 import io.pixeloutlaw.minecraft.spigot.config.MasterConfiguration;
 import io.pixeloutlaw.minecraft.spigot.config.VersionedConfiguration;
 import io.pixeloutlaw.minecraft.spigot.config.VersionedSmartYamlConfiguration;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import land.face.repair.commands.BaseCommand;
+import land.face.repair.commands.RepairCommand;
 import land.face.repair.listeners.AnvilOpenListener;
 import land.face.repair.listeners.InventoryListener;
 import land.face.repair.managers.RepairGuiManager;
@@ -15,7 +16,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
-import se.ranzdo.bukkit.methodcommand.CommandHandler;
 
 public class EconRepairPlugin extends JavaPlugin {
 
@@ -26,8 +26,6 @@ public class EconRepairPlugin extends JavaPlugin {
 
   private MasterConfiguration settings;
   private VersionedSmartYamlConfiguration configYAML;
-
-  private CommandHandler commandHandler;
 
   public static EconRepairPlugin getInstance() {
     return instance;
@@ -54,8 +52,8 @@ public class EconRepairPlugin extends JavaPlugin {
     Bukkit.getPluginManager().registerEvents(new InventoryListener(this), this);
     Bukkit.getPluginManager().registerEvents(new AnvilOpenListener(this), this);
 
-    commandHandler = new CommandHandler(this);
-    commandHandler.registerCommands(new BaseCommand(this));
+    PaperCommandManager commandManager = new PaperCommandManager(this);
+    commandManager.registerCommand(new RepairCommand(this));
 
     Bukkit.getServer().getLogger().info("EconRepair Enabled!");
   }

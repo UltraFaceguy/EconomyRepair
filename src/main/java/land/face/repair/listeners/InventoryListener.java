@@ -1,8 +1,7 @@
 package land.face.repair.listeners;
 
-import com.tealcube.minecraft.bukkit.TextUtils;
 import com.tealcube.minecraft.bukkit.facecore.utilities.MessageUtils;
-import io.pixeloutlaw.minecraft.spigot.hilt.ItemStackExtensionsKt;
+import io.pixeloutlaw.minecraft.spigot.garbage.StringExtensionsKt;
 import java.util.ArrayList;
 import java.util.List;
 import land.face.repair.EconRepairPlugin;
@@ -29,19 +28,16 @@ public class InventoryListener implements Listener {
 
   public InventoryListener(EconRepairPlugin plugin) {
     this.plugin = plugin;
-    tooPoorMessage = TextUtils.color(
+    tooPoorMessage = StringExtensionsKt.chatColorize(
         plugin.getSettings().getString("config.language.not-enough-money-message", "&cUr 2 po0r"));
-    repairMessage = TextUtils.color(
+    repairMessage = StringExtensionsKt.chatColorize(
         plugin.getSettings().getString("config.language.repair-message", "&eFixed for {a}"));
-    remainingMessage = TextUtils.color(
-        plugin.getSettings()
-            .getString("config.language.money-remaining-message", "&eMoney left: {a}"));
-    bankRemainingMessage = TextUtils.color(
-        plugin.getSettings()
-            .getString("config.language.bank-remaining-message", "&eBank left {a}"));
-    alreadyRepaired = TextUtils.color(
-        plugin.getSettings()
-            .getString("config.language.already-repaired-message", "&cAlready fixed!"));
+    remainingMessage = StringExtensionsKt.chatColorize(
+        plugin.getSettings().getString("config.language.money-remaining-message", "&eMoney left: {a}"));
+    bankRemainingMessage = StringExtensionsKt.chatColorize(
+        plugin.getSettings().getString("config.language.bank-remaining-message", "&eBank left {a}"));
+    alreadyRepaired = StringExtensionsKt.chatColorize(
+        plugin.getSettings().getString("config.language.already-repaired-message", "&cAlready fixed!"));
   }
 
   @EventHandler(priority = EventPriority.LOWEST)
@@ -120,7 +116,7 @@ public class InventoryListener implements Listener {
   private void setPurchased(FilterGuiMenu menu, int slot, RepairIcon repairIcon) {
     repairIcon.setDurability((short) 0);
     repairIcon.setRepaired(true);
-    List<String> lore = new ArrayList<>(ItemStackExtensionsKt.getLore(repairIcon));
+    List<String> lore = new ArrayList<>(repairIcon.getLore());
     int line = -1;
     for (int i = 0; i <= lore.size() - 1; i++) {
       String s = ChatColor.stripColor(lore.get(i));
@@ -130,9 +126,9 @@ public class InventoryListener implements Listener {
       }
     }
     if (line != -1) {
-      lore.set(line, TextUtils.color("&a&lItem Repaired!"));
+      lore.set(line, StringExtensionsKt.chatColorize("&a&lItem Repaired!"));
     }
-    ItemStackExtensionsKt.setLore(repairIcon, lore);
+    repairIcon.setLore(lore);
     menu.getInventory().setItem(slot, repairIcon);
   }
 }

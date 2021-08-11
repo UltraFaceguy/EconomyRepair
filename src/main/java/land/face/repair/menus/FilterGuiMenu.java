@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import land.face.repair.data.RepairIcon;
 import land.face.repair.events.RepairCostGenerationEvent;
 import land.face.repair.managers.RepairGuiManager;
@@ -31,6 +32,8 @@ public class FilterGuiMenu {
 
   private final List<RepairIcon> repairIcons = new ArrayList<>();
   private Inventory inventory;
+
+  private static final Pattern pattern = Pattern.compile("[^0-9.-]");
 
   public static final DecimalFormat FORMAT = new DecimalFormat("###,###,###");
   private final static String MENU_NAME = ChatColor.DARK_GRAY + "Click To Repair!";
@@ -81,16 +84,15 @@ public class FilterGuiMenu {
     double cost = ((repairGuiManager.getBaseCost() + itemLevel * repairGuiManager.getCostPerLevel() +
         Math.pow(itemLevel, repairGuiManager.getCostExponent())) * ItemUtil.getPercent(stack));
 
-    double repairMult = 1;
-    for (String loreLine : ItemStackExtensionsKt.getLore(stack)) {
-      if (!loreLine.contains(" Repair Cost")) {
+    double repairMod = 0;
+    for (String loreLine : stack.getLore()) {
+      if (!loreLine.endsWith(" Repair Cost")) {
         continue;
       }
       String strippedLore = ChatColor.stripColor(loreLine);
-      double value = Double.parseDouble(strippedLore.replaceAll("[^0-9.-]", ""));
-      repairMult += value / 100;
+      repairMod += Double.parseDouble(pattern.matcher(strippedLore).replaceAll(""));
     }
-    cost *= Math.min(0, repairMult);
+    cost *= 1 + (repairMod / 100);
 
     RepairCostGenerationEvent costEvent = new RepairCostGenerationEvent(player, stack, cost);
     Bukkit.getPluginManager().callEvent(costEvent);
@@ -98,10 +100,10 @@ public class FilterGuiMenu {
     cost = costEvent.getCost();
 
     ItemStack displayStack = stack.clone();
-    List<String> lore = new ArrayList<>(ItemStackExtensionsKt.getLore(displayStack));
+    List<String> lore = new ArrayList<>(stack.getLore());
     lore.add("");
     lore.add(StringExtensionsKt.chatColorize("&6&lRepair Cost: &e" + FORMAT.format(cost) + "◎"));
-    ItemStackExtensionsKt.setLore(displayStack, lore);
+    displayStack.setLore(lore);
     return new RepairIcon(displayStack, stack, (int) cost);
   }
 
